@@ -1,62 +1,87 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { initialGameState, updateGameState } from '$lib/game';
+	import type { GameState } from '$lib/game';
 
-	let interValId;
+	let gameState: GameState = initialGameState;
 
-	let circle_position_x:number = 0;
-	let circle_position_y:number = 0;
+	let screen_width: number;
+	let screen_height: number;
 
-	let circle_vel_x:number = 0;
-	let circle_vel_y:number = 0;
+	let window_width: number = 0;
+	let window_height: number = 0;
 
-	let target_position_x:number = 0;
-	let target_position_y:number = 0;
+	let window_top: number = 0;
+	let window_left: number = 0;
 
-	let screen_width:number = 0;
-	let screen_height:number = 0;
+	$: bird_color = gameState.isGameOver ? 'red' : 'blue';
 
-	let window_width:number = 0;
-	let window_height:number = 0;
+	onMount(() => {
+		screen_width = window.screen.width;
+		screen_height = window.screen.height;
+		setInterval(() => {
+			window_width = window.innerWidth;
+			window_height = window.innerHeight;
+			window_top = window.screenTop;
+			window_left = window.screenLeft;
 
-	let window_top:number = 0;
-	let window_left:number = 0;
-
-	onMount(()=> {
-	screen_width = window.screen.width;
-	screen_height = window.screen.height;
-	intervalId = setInterval(() => {
-		window_width = window.innerWidth;
-		window_height = window.innerHeight;
-		window_top = window.screenTop;
-		window_left = window.screenLeft;
-
-		circle_position_x += circle_vel_x;
-		circle_position_y += circle_vel_y;
-
-		target_position_x = window_left + window_width / 2;
-		target_position_y = window_top + window_height / 2;
-
-		circle_vel_x = (target_position_x - circle_position_x) / 50;
-		circle_vel_y = (target_position_y - circle_position_y) / 50;
-	    }, 0);
-	})
+			const bird_x = (window_left + window_width / 2) / screen_width;
+			const bird_y = (window_top + window_height / 2) / screen_height;
+			gameState = updateGameState(gameState, bird_x, bird_y);
+			console.log(bird_x);
+		}, 20);
+	});
 </script>
+
+<div class="screen_wrapper">
+	<div class="bird {bird_color}">{gameState.score}</div>
+	{#each gameState.pipes as pipe}
+		<div
+			class="pipe pipe-top"
+			style="width:{screen_width * pipe.width + 'px'}; 
+					height:{screen_height * pipe.y - window_top + 'px'};  
+				position:absolute; 
+				top: 0; 
+				left: {screen_width * pipe.x - screenLeft + 'px'}"
+		></div>
+		<div
+			class="pipe pipe-bottom"
+			style="width:{screen_width * pipe.width + 'px'}; 
+				position: absolute; bottom: 0; 
+				height: {window_height - screen_height * (pipe.y + pipe.gap_height) + window_top + 'px'};
+				left: {screen_width * pipe.x - screenLeft + 'px'}"
+		></div>
+	{/each}
+</div>
+
 <style>
-body {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #f0f0f0;
-}
+	.pipe {
+		background-color: #00ff00;
+	}
+	.screen_wrapper {
+		position: absolute;
+		width: 100vw;
+		height: 100vh;
+		background-color: #001144;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.bird {
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 
-.circle {
-    width: 10px;
-    height: 10px;
-    background-color: #3498db;
-    border-radius: 50%;
-}
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		top: calc(-var(window_height) / 2 - 25) px;
+	}
+	.red {
+		background-color: red;
+	}
+	.blue {
+		background-color: blue;
+	}
 </style>
-
-<div class="circle" style="transform: translate({circle_position_x-window_left}px, {circle_position_y-window_top}px)"></div>
